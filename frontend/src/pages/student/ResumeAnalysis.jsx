@@ -83,8 +83,13 @@ const ResumeAnalysis = () => {
     { id: 'interview', label: 'Interview Prep', icon: MessageSquare },
   ];
 
+  const hasProfileData = !!(user?.bio || user?.skills?.length || user?.education?.length || user?.experience?.length || user?.projects?.length);
+
   const buildResume = () => {
-    return `
+    // If user pasted resume text and profile is empty, use only the pasted text
+    if (resumeText && !hasProfileData) return resumeText.trim();
+
+    const profileSection = `
 Name: ${user?.name}
 Bio: ${user?.bio || 'Not provided'}
 Skills: ${user?.skills?.join(', ') || 'Not provided'}
@@ -92,8 +97,9 @@ Education: ${user?.education?.map(e => `${e.degree} in ${e.field} from ${e.insti
 Experience: ${user?.experience?.map(e => `${e.role} at ${e.company} (${e.startDate} - ${e.endDate || 'Present'}): ${e.description}`).join('; ') || 'Not provided'}
 Projects: ${user?.projects?.map(p => `${p.title}: ${p.description} [${p.techStack?.join(', ')}]`).join('; ') || 'Not provided'}
 Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
-${resumeText ? `\nAdditional Resume Content:\n${resumeText}` : ''}
     `.trim();
+
+    return resumeText ? `${profileSection}\n\nAdditional Resume Content:\n${resumeText}` : profileSection;
   };
 
   const handleAnalyze = async () => {
@@ -221,17 +227,34 @@ ${resumeText ? `\nAdditional Resume Content:\n${resumeText}` : ''}
               <h2 className="font-bold text-slate-900 mb-1 flex items-center gap-2">
                 <Brain className="w-5 h-5 text-purple-600" /> Resume Analyzer
               </h2>
-              <p className="text-sm text-slate-500 mb-4">
-                Your profile data is used automatically. Add extra resume content below if needed.
-              </p>
+
+              {!hasProfileData && (
+                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                  <AlertCircle style={{ width: '16px', height: '16px', color: '#ea580c', flexShrink: 0, marginTop: '2px' }} />
+                  <div>
+                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#c2410c', marginBottom: '2px' }}>Your profile is empty</p>
+                    <p style={{ fontSize: '0.8125rem', color: '#9a3412' }}>Paste your resume text below — it will be used for analysis since your profile has no data yet.</p>
+                  </div>
+                </div>
+              )}
+
+              <label className="form-label">
+                {hasProfileData ? 'Additional Resume Content (optional)' : 'Paste Your Resume Text *'}
+              </label>
               <textarea
-                rows={4}
-                placeholder="Paste additional resume text here (optional)..."
+                rows={hasProfileData ? 4 : 8}
+                placeholder={hasProfileData
+                  ? 'Add extra details not in your profile (optional)...'
+                  : 'Paste your full resume text here — education, experience, skills, projects...'}
                 value={resumeText}
                 onChange={(e) => setResumeText(e.target.value)}
                 className="form-input resize-none text-sm mb-4"
               />
-              <button onClick={handleAnalyze} disabled={loading} className="btn-primary">
+              <button
+                onClick={handleAnalyze}
+                disabled={loading || (!hasProfileData && !resumeText.trim())}
+                className="btn-primary"
+              >
                 {loading ? <Spinner size="sm" /> : <><Brain className="w-4 h-4" /> Analyze Resume</>}
               </button>
             </div>

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  Briefcase, Menu, X, Bell, ChevronDown, 
+import {
+  Briefcase, Menu, X, Bell, ChevronDown,
   User, LogOut, LayoutDashboard, Search, BookmarkCheck
 } from 'lucide-react';
 
@@ -48,14 +48,13 @@ const Navbar = () => {
 
           {/* Desktop Nav Links */}
           {user && (
-            <div className="hidden md:flex items-center gap-1">
+            <div className="hidden md:flex items-center gap-3">
               <Link
                 to={user.role === 'student' ? '/student/dashboard' : '/recruiter/dashboard'}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive('/student/dashboard') || isActive('/recruiter/dashboard')
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive('/student/dashboard') || isActive('/recruiter/dashboard')
                     ? 'bg-blue-50 text-blue-700'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 Dashboard
               </Link>
@@ -63,11 +62,10 @@ const Navbar = () => {
                 <Link
                   key={to}
                   to={to}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    isActive(to)
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(to)
                       ? 'bg-blue-50 text-blue-700'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   {label}
                 </Link>

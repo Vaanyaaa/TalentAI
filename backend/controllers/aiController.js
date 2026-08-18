@@ -1,7 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
 // Helper: parse JSON from AI response
 const parseAIJson = (text) => {
@@ -40,7 +40,9 @@ const analyzeResume = async (req, res) => {
     throw new Error('Resume text is required');
   }
 
-  const prompt = `You are an expert HR consultant and resume reviewer. Analyze the following resume and return a detailed JSON report.
+  const today = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const prompt = `You are an expert HR consultant and resume reviewer. Today's date is ${today}. Analyze the following resume and return a detailed JSON report.
+IMPORTANT: Do NOT flag any dates from ${new Date().getFullYear()} or earlier as "future" dates — they are valid present or past dates.
 
 Resume:
 """
