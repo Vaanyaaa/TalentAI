@@ -37,8 +37,14 @@ const Login = () => {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'row' }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .login-left-panel { display: none !important; }
+          .login-right-panel { flex: 1 1 100% !important; width: 100% !important; padding: 2rem 1.25rem !important; }
+        }
+      `}</style>
       {/* Left Panel */}
-      <div style={{ flex: '0 0 45%', width: '45%', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0891b2 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem', color: 'white', position: 'relative', overflow: 'hidden' }}>
+      <div className="login-left-panel" style={{ flex: '0 0 45%', width: '45%', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #0891b2 100%)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '3rem', color: 'white', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
           <div style={{ position: 'absolute', top: '-8rem', right: '-8rem', width: '24rem', height: '24rem', background: 'rgba(255,255,255,0.1)', borderRadius: '9999px', filter: 'blur(60px)' }} />
           <div style={{ position: 'absolute', bottom: '-8rem', left: '-8rem', width: '24rem', height: '24rem', background: 'rgba(34,211,238,0.2)', borderRadius: '9999px', filter: 'blur(60px)' }} />
@@ -86,7 +92,7 @@ const Login = () => {
       </div>
 
       {/* Right Panel */}
-      <div style={{ flex: '0 0 55%', width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '3rem 2rem', background: 'white' }}>
+      <div className="login-right-panel" style={{ flex: '0 0 55%', width: '55%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: '3rem 2rem', background: 'white' }}>
         <div style={{ width: '100%', maxWidth: '24rem' }}>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.25rem' }}>Welcome back</h1>
           <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '2rem' }}>Sign in to your account to continue</p>
