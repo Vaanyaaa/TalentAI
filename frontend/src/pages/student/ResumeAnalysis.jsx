@@ -71,6 +71,7 @@ const ResumeAnalysis = () => {
   const [jobDesc, setJobDesc] = useState('');
   const [jobTitle, setJobTitle] = useState('');
   const [loading, setLoading] = useState(false);
+  const [extractingText, setExtractingText] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [match, setMatch] = useState(null);
   const [coverLetter, setCoverLetter] = useState('');
@@ -84,12 +85,14 @@ const ResumeAnalysis = () => {
   ];
 
   const hasProfileData = !!(user?.bio || user?.skills?.length || user?.education?.length || user?.experience?.length || user?.projects?.length);
+  const hasUploadedResume = !!user?.resume;
 
   const buildResume = () => {
-    // If user pasted resume text and profile is empty, use only the pasted text
-    if (resumeText && !hasProfileData) return resumeText.trim();
+    // If user pasted text or edited text, return it
+    if (resumeText && resumeText.trim()) return resumeText.trim();
+    if (!hasProfileData) return '';
 
-    const profileSection = `
+    return `
 Name: ${user?.name}
 Bio: ${user?.bio || 'Not provided'}
 Skills: ${user?.skills?.join(', ') || 'Not provided'}
@@ -98,27 +101,46 @@ Experience: ${user?.experience?.map(e => `${e.role} at ${e.company} (${e.startDa
 Projects: ${user?.projects?.map(p => `${p.title}: ${p.description} [${p.techStack?.join(', ')}]`).join('; ') || 'Not provided'}
 Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
     `.trim();
+  };
 
-    return resumeText ? `${profileSection}\n\nAdditional Resume Content:\n${resumeText}` : profileSection;
+  const handleExtractText = async () => {
+    if (!user?.resume) return toast.error('No uploaded resume found');
+    setExtractingText(true);
+    try {
+      const { data } = await api.post('/ai/extract-resume-text', { resumeUrl: user.resume });
+      if (data.text) {
+        setResumeText(data.text);
+        toast.success('Extracted text from your uploaded resume! 📄');
+      }
+    } catch {
+      toast.error('Could not extract text from PDF. You can paste your resume text below.');
+    } finally {
+      setExtractingText(false);
+    }
   };
 
   const handleAnalyze = async () => {
     const text = buildResume();
-    if (!text.trim()) return toast.error('Please add resume content or fill your profile');
+    if (!hasUploadedResume && !text.trim()) {
+      return toast.error('Please upload a resume or add resume text to analyze');
+    }
     setLoading(true);
     try {
-      const { data } = await api.post('/ai/analyze-resume', { resumeText: text });
+      const { data } = await api.post('/ai/analyze-resume', {
+        resumeUrl: user?.resume,
+        resumeText: text,
+      });
       setAnalysis(data.analysis);
       if (data.analysis?.score) {
         await api.put('/users/resume-score', { score: data.analysis.score });
       }
       toast.success('Resume analyzed! 🎯');
     } catch (err) { 
-      const msg = err.response?.data?.message || '';
+      const msg = err.response?.data?.message || err.message || '';
       if (err.response?.status === 429 || msg.toLowerCase().includes('quota')) {
         toast.error('⏳ AI quota limit reached. Please wait a moment and try again.');
       } else {
-        toast.error('Resume analysis failed. Please try again.');
+        toast.error(msg || 'Resume analysis failed. Please try again.');
       }
     } finally { setLoading(false); }
   };
@@ -128,6 +150,7 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
     setLoading(true);
     try {
       const { data } = await api.post('/ai/skill-match', {
+        resumeUrl: user?.resume,
         resumeText: buildResume(),
         jobDescription: jobDesc,
         jobTitle,
@@ -135,11 +158,11 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
       setMatch(data.match);
       toast.success('Skill match complete! 🎯');
     } catch (err) { 
-      const msg = err.response?.data?.message || '';
+      const msg = err.response?.data?.message || err.message || '';
       if (err.response?.status === 429 || msg.toLowerCase().includes('quota')) {
         toast.error('⏳ AI quota limit reached. Please wait a moment and try again.');
       } else {
-        toast.error('Skill match failed. Please try again.');
+        toast.error(msg || 'Skill match failed. Please try again.');
       }
     } finally { setLoading(false); }
   };
@@ -149,6 +172,7 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
     setLoading(true);
     try {
       const { data } = await api.post('/ai/cover-letter', {
+        resumeUrl: user?.resume,
         resumeText: buildResume(),
         jobDescription: jobDesc,
         jobTitle,
@@ -158,11 +182,11 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
       setCoverLetter(data.coverLetter);
       toast.success('Cover letter generated! ✨');
     } catch (err) { 
-      const msg = err.response?.data?.message || '';
+      const msg = err.response?.data?.message || err.message || '';
       if (err.response?.status === 429 || msg.toLowerCase().includes('quota')) {
         toast.error('⏳ AI quota limit reached. Please wait a moment and try again.');
       } else {
-        toast.error('Failed to generate cover letter. Please try again.');
+        toast.error(msg || 'Failed to generate cover letter. Please try again.');
       }
     } finally { setLoading(false); }
   };
@@ -178,12 +202,12 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
       });
       setQuestions(data.questions);
       toast.success('Questions generated! 🎤');
-    } catch (err) { 
-      const msg = err.response?.data?.message || '';
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || '';
       if (err.response?.status === 429 || msg.toLowerCase().includes('quota')) {
         toast.error('⏳ AI quota limit reached. Please wait a moment and try again.');
       } else {
-        toast.error('Failed to generate questions. Please try again.');
+        toast.error(msg || 'Failed to generate interview questions. Please try again.');
       }
     } finally { setLoading(false); }
   };
@@ -228,22 +252,42 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
                 <Brain className="w-5 h-5 text-purple-600" /> Resume Analyzer
               </h2>
 
-              {!hasProfileData && (
+              {hasUploadedResume ? (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '14px 16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <CheckCircle2 style={{ width: '20px', height: '20px', color: '#2563eb', flexShrink: 0 }} />
+                    <div>
+                      <p style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e40af', margin: 0 }}>Uploaded PDF Resume Detected</p>
+                      <p style={{ fontSize: '0.8rem', color: '#3b82f6', margin: '2px 0 0' }}>AI will automatically read and analyze your full uploaded PDF resume (including all projects, work experience, education, and skills).</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExtractText}
+                    disabled={extractingText}
+                    style={{ fontSize: '0.8rem', fontWeight: 600, color: '#1d4ed8', background: 'white', border: '1px solid #93c5fd', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer' }}
+                  >
+                    {extractingText ? 'Extracting...' : '📄 Extract & Preview Text'}
+                  </button>
+                </div>
+              ) : !hasProfileData ? (
                 <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '10px', padding: '12px 14px', marginBottom: '14px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                   <AlertCircle style={{ width: '16px', height: '16px', color: '#ea580c', flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#c2410c', marginBottom: '2px' }}>Your profile is empty</p>
-                    <p style={{ fontSize: '0.8125rem', color: '#9a3412' }}>Paste your resume text below — it will be used for analysis since your profile has no data yet.</p>
+                    <p style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#c2410c', marginBottom: '2px' }}>No uploaded resume or profile data</p>
+                    <p style={{ fontSize: '0.8125rem', color: '#9a3412' }}>Paste your resume text below — it will be used for analysis.</p>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               <label className="form-label">
-                {hasProfileData ? 'Additional Resume Content (optional)' : 'Paste Your Resume Text *'}
+                {hasUploadedResume || hasProfileData ? 'Resume Content / Additional Notes (optional)' : 'Paste Your Resume Text *'}
               </label>
               <textarea
-                rows={hasProfileData ? 4 : 8}
-                placeholder={hasProfileData
+                rows={hasUploadedResume || hasProfileData ? 4 : 8}
+                placeholder={hasUploadedResume
+                  ? 'Your uploaded PDF resume will be analyzed automatically. You can optionally paste extra notes or click "Extract & Preview Text" above...'
+                  : hasProfileData
                   ? 'Add extra details not in your profile (optional)...'
                   : 'Paste your full resume text here — education, experience, skills, projects...'}
                 value={resumeText}
@@ -252,7 +296,7 @@ Portfolio Links: ${user?.portfolioLinks?.join(', ') || 'Not provided'}
               />
               <button
                 onClick={handleAnalyze}
-                disabled={loading || (!hasProfileData && !resumeText.trim())}
+                disabled={loading || (!hasUploadedResume && !hasProfileData && !resumeText.trim())}
                 className="btn-primary"
               >
                 {loading ? <Spinner size="sm" /> : <><Brain className="w-4 h-4" /> Analyze Resume</>}

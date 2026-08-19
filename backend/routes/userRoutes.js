@@ -5,6 +5,7 @@ const {
   updateProfile,
   uploadAvatar,
   uploadResume,
+  getResume,
   saveJob,
   unsaveJob,
   getSavedJobs,
@@ -18,6 +19,8 @@ router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
 router.post('/upload-avatar', protect, avatarUpload.single('avatar'), uploadAvatar);
 router.post('/upload-resume', protect, authorize('student'), resumeUpload.single('resume'), uploadResume);
+router.get('/resume', protect, getResume);
+router.get('/resume/:id', getResume);
 router.post('/save-job/:jobId', protect, authorize('student'), saveJob);
 router.delete('/save-job/:jobId', protect, authorize('student'), unsaveJob);
 router.get('/saved-jobs', protect, authorize('student'), getSavedJobs);

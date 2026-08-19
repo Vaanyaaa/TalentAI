@@ -9,6 +9,8 @@ import {
   CheckCircle2, XCircle, Clock, Star
 } from 'lucide-react';
 
+import { viewResumePdf } from '../../utils/resumeUtils';
+
 const STATUS_OPTIONS = [
   { value: 'Applied',            label: 'Applied',             badge: 'badge-applied' },
   { value: 'Shortlisted',        label: 'Shortlisted',         badge: 'badge-shortlisted' },
@@ -128,10 +130,14 @@ const ViewApplicants = () => {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <span className={`badge ${sc.badge}`}>{sc.label}</span>
                       {app.applicant?.resume && (
-                        <a href={app.applicant.resume} target="_blank" rel="noreferrer"
-                          className="p-2 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors" title="View Resume">
+                        <button
+                          type="button"
+                          onClick={() => viewResumePdf(app.applicant.resume, app.applicant.name)}
+                          className="p-2 rounded-lg text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors bg-transparent border-0 cursor-pointer"
+                          title="View Resume PDF"
+                        >
                           <FileText className="w-4 h-4" />
-                        </a>
+                        </button>
                       )}
                       <button
                         onClick={() => setSelectedApp(selectedApp?._id === app._id ? null : app)}

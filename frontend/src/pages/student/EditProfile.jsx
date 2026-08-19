@@ -8,8 +8,9 @@ import { Link } from 'react-router-dom';
 import {
   User, Mail, Briefcase, GraduationCap, Code, FolderOpen,
   Link2, Upload, Camera, FileText, Plus, Trash2, Edit3,
-  CheckCircle2, Save, X
+  CheckCircle2, Save, X, Download, ExternalLink
 } from 'lucide-react';
+import { viewResumePdf, downloadResumePdf } from '../../utils/resumeUtils';
 
 const SKILL_OPTIONS = [
   'JavaScript', 'React', 'Node.js', 'Python', 'Java', 'MongoDB', 'SQL', 'Express.js',
@@ -380,8 +381,24 @@ const EditProfile = () => {
                     <div>
                       <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
                       <p className="font-semibold text-slate-900 mb-1">Resume Uploaded ✓</p>
-                      <a href={user.resume} target="_blank" rel="noreferrer" className="text-blue-600 text-sm hover:underline">View Current Resume</a>
-                      <p className="text-xs text-slate-400 mt-2">Upload a new file to replace it</p>
+                      <div className="flex items-center justify-center gap-4 mt-2 mb-1">
+                        <button
+                          type="button"
+                          onClick={() => viewResumePdf(user.resume, user.name)}
+                          className="text-blue-600 text-sm hover:underline inline-flex items-center gap-1 font-medium bg-transparent border-0 cursor-pointer"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" /> View PDF
+                        </button>
+                        <span className="text-slate-300">·</span>
+                        <button
+                          type="button"
+                          onClick={() => downloadResumePdf(user.resume, user.name)}
+                          className="text-slate-600 text-sm hover:underline inline-flex items-center gap-1 bg-transparent border-0 cursor-pointer"
+                        >
+                          <Download className="w-3.5 h-3.5" /> Download .pdf
+                        </button>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-2">Upload a new file below to replace it</p>
                     </div>
                   ) : (
                     <div>

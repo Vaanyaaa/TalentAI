@@ -149,14 +149,56 @@ const updateResumeScore = async (req, res) => {
   res.json({ success: true, user });
 };
 
+// @desc    Download / stream resume as a proper PDF with PDF Content-Type and headers
+// @route   GET /api/users/resume/:id?
+// @access  Public / Private
+const getResume = async (req, res) => {
+  try {
+    const userId = req.params.id || req.user?._id;
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'User ID is required' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user || !user.resume) {
+      return res.status(404).json({ success: false, message: 'Resume not found' });
+    }
+
+    const resumeUrl = user.resume;
+    const cleanName = (user.name || 'resume').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const filename = `${cleanName}_Resume.pdf`;
+
+    const response = await fetch(resumeUrl);
+    if (!response.ok) {
+      return res.redirect(resumeUrl);
+    }
+
+    const isDownload = req.query.download === 'true';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `${isDownload ? 'attachment' : 'inline'}; filename="${filename}"`
+    );
+
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error fetching resume PDF:', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve resume PDF' });
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
   uploadAvatar,
   uploadResume,
+  getResume,
   saveJob,
   unsaveJob,
   getSavedJobs,
   getUserById,
   updateResumeScore,
 };
+
